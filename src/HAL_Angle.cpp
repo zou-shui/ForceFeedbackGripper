@@ -1,0 +1,63 @@
+#include "HAL.h"
+
+#define ADC_MAX      4095.0f
+#define VREF         3.3f
+#define POT_VMAX     2.5f
+#define ANGLE_RANGE  360.0f   //角度行程
+
+#define ANGLE_A 15
+#define ANGLE_B 13
+
+//初始化ADC引脚
+void angle_init(void)
+{
+    analogSetPinAttenuation(ANGLE_A, ADC_11db);
+    analogSetPinAttenuation(ANGLE_B, ADC_11db);
+}
+
+//电机A角度读取，单位：度
+//绝对角度
+float angleA_read(void)
+{
+    int raw = analogRead(ANGLE_A);
+
+    float v = raw / ADC_MAX * VREF;
+
+    // 限制不超过电位器供电
+    if(v < 0) v = 0;
+    if(v > POT_VMAX) v = POT_VMAX;
+
+    float angle = v / POT_VMAX * ANGLE_RANGE;
+
+    return angle;
+}
+
+//电机B角度读取，单位：度
+//绝对角度
+float angleB_read(void)
+{
+    int raw = analogRead(ANGLE_B);
+
+    float v = raw / ADC_MAX * VREF;
+
+    if(v < 0) v = 0;
+    if(v > POT_VMAX) v = POT_VMAX;
+
+    float angle = v / POT_VMAX * ANGLE_RANGE;
+
+    return angle;
+}
+
+//打印角度信息，测试用
+void angle_task(void *pvParameters)
+{
+    while(1)
+    {
+        Serial.print("AngleA = ");
+        Serial.print(angleA_read());
+        Serial.print("; AngleB = ");
+        Serial.println(angleB_read());
+
+        vTaskDelay(pdMS_TO_TICKS(100));
+    }
+}
