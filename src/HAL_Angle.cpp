@@ -1,9 +1,16 @@
 #include "HAL.h"
 
-#define ADC_MAX      4095.0f
-#define VREF         3.3f
-#define POT_VMAX     2.5f
-#define ANGLE_RANGE  360.0f   //角度行程
+#define ADC_MAX      4095.0f    //12位ADC最大值
+#define VREF         3.3f       //ADC最大量程
+#define POT_VMAX     2.5f       //电位器供电电压
+#define ANGLE_RANGE  360.0f     //角度行程
+
+#define ANGLE_OFFSET 224.0f     //角度偏移量
+/*  
+    角度偏移量ANGLE_OFFSET将夹爪开合至共线时的角度补偿为0°
+    夹紧过程中两臂平行时的角度补偿为90°
+    这个值需要根据实际机械结构调试获得
+*/
 
 #define ANGLE_A 15
 #define ANGLE_B 13
@@ -16,7 +23,6 @@ void angle_init(void)
 }
 
 //电机A角度读取，单位：度
-//绝对角度
 float angleA_read(void)
 {
     int raw = analogRead(ANGLE_A);
@@ -27,13 +33,12 @@ float angleA_read(void)
     if(v < 0) v = 0;
     if(v > POT_VMAX) v = POT_VMAX;
 
-    float angle = v / POT_VMAX * ANGLE_RANGE;
+    float angle = v / POT_VMAX * ANGLE_RANGE;   //比例换算成角度
 
-    return angle;
+    return angle - ANGLE_OFFSET;    // 减去偏移量
 }
 
 //电机B角度读取，单位：度
-//绝对角度
 float angleB_read(void)
 {
     int raw = analogRead(ANGLE_B);
@@ -43,9 +48,9 @@ float angleB_read(void)
     if(v < 0) v = 0;
     if(v > POT_VMAX) v = POT_VMAX;
 
-    float angle = v / POT_VMAX * ANGLE_RANGE;
+    float angle = v / POT_VMAX * ANGLE_RANGE;   //比例换算成角度
 
-    return angle;
+    return angle - ANGLE_OFFSET;    // 减去偏移量
 }
 
 //打印角度信息，测试用

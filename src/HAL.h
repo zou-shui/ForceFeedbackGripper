@@ -14,16 +14,13 @@ void motor_stop();
 /* HAL_Current 电流检测 */
 void current_init(void);
 float current_read(void);
-void current_task(void *pvParameters);
+
 
 
 /* HAL_Angle 角度检测 */
 void angle_init(void);
 float angleA_read(void);
 float angleB_read(void);
-void angle_task(void *pvParameters);
-
-
 
 
 

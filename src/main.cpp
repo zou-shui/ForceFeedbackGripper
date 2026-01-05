@@ -1,6 +1,24 @@
 #include <Arduino.h>
 #include "HAL.h"
 
+
+//打印信息，测试用
+void print_task(void *pvParameters)
+{
+    while(1)
+    {
+        float cur = current_read();
+        Serial.print(cur, 4); // 保留4位小数
+        Serial.print(",");
+        Serial.print(angleA_read(), 2);
+        Serial.print(",");
+        Serial.println(angleB_read(), 2);
+
+        vTaskDelay(pdMS_TO_TICKS(100));
+    }
+}
+
+
 void setup()
 {
   Serial.begin(115200);
@@ -11,21 +29,13 @@ void setup()
   angle_init();
 
   xTaskCreate(
-      angle_task,   // 任务函数
-      "angle_task", // 名字
+      print_task,   // 任务函数
+      "Print_task", // 名字
       4096,         // 栈大小
       NULL,         // 参数
       1,            // 优先级
       NULL          // 任务句柄
   );
-  // xTaskCreate(
-  //     current_task,  // 任务函数
-  //     "CurrentTask", // 名字
-  //     4096,          // 栈大小
-  //     NULL,          // 参数
-  //     1,             // 优先级
-  //     NULL           // 任务句柄
-  // );
 }
 
 void loop()
