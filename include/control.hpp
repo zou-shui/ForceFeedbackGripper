@@ -2,7 +2,7 @@
 
 namespace Control {
 
-PID* posPID = new PID(1.0f, 0.1f, 0.05f, -100.0f, 100.0f);
+PID* posPID = new PID(0.1f, 0.05f, 0.001f, -100.0f, 100.0f);
 PID* currPID = new PID(0.5f, 0.05f, 0.02f, -50.0f, 50.0f);
 
 float controlStep(float pos_fb, float pos_ref, float dt, float curr_fb) {
