@@ -5,7 +5,8 @@
 #define MOTOR_PWM_DUTY 0.9f // 电机PWM占空比
 #define MOTOR_RUN_TIME 500  // 电机运行时间，单位ms
 
-float Position_ref = 0.0f; 
+float Position_ref = 0.0f;
+SemaphoreHandle_t xPositionMutex = NULL; // 互斥锁保护Position_ref 
 
 //打印信息，测试用
 void print_task(void *pvParameters)
@@ -35,9 +36,16 @@ void control_task(void *pvParameters)
     float pos_fb = (a + b) / 2.0f;  // 夹爪当前开度
     float curr_fb = current_read(); // 当前电流反馈
 
+    // 读取目标位置时使用互斥锁保护
+    float pos_ref_local = 0.0f;
+    if (xSemaphoreTake(xPositionMutex, portMAX_DELAY) == pdTRUE) {
+      pos_ref_local = Position_ref;
+      xSemaphoreGive(xPositionMutex);
+    }
+
     float base = Control::controlStep(
         pos_fb,
-        Position_ref,
+        pos_ref_local,
         dt,
         curr_fb);
 
@@ -86,6 +94,12 @@ void setup()
   Serial.begin(115200);
   Serial.println("ESP32 串口双向通信已启动~");
 
+  // 创建互斥锁
+  xPositionMutex = xSemaphoreCreateMutex();
+  if (xPositionMutex == NULL) {
+    Serial.println("互斥锁创建失败！");
+  }
+
   motor_init();
   current_init();
   angle_init();
@@ -118,7 +132,13 @@ void loop()
     if (msg.startsWith("P:"))
     {
       String num = msg.substring(2); // 取冒号后面的部分
-      Position_ref = num.toFloat();  // 转成 float
+      float new_pos = num.toFloat();  // 转成 float
+
+      // 更新目标位置时使用互斥锁保护
+      if (xSemaphoreTake(xPositionMutex, portMAX_DELAY) == pdTRUE) {
+        Position_ref = new_pos;
+        xSemaphoreGive(xPositionMutex);
+      }
 
       // Serial.print("接收到P值 = ");
       // Serial.println(Position_ref, 3);
