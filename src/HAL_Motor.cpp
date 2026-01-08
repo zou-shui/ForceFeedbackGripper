@@ -12,25 +12,26 @@
 #define M_B1_CH 2
 #define M_B2_CH 3
 
+// PWM参数定义
+#define PWM_FREQ 20000      // PWM频率: 20kHz
+#define PWM_RESOLUTION 8    // PWM分辨率: 8位 (0~255)
+#define PWM_MAX_VALUE 255   // PWM最大值
+
 // 初始化电机控制 PWM
 void motor_init()
 {
-    // 设置 PWM 参数
-    int freq = 20000;   // 20kHz
-    int resolution = 8; // 8 位分辨率 (0~255)
-
     // 电机 A
-    ledcSetup(M_A1_CH, freq, resolution);
+    ledcSetup(M_A1_CH, PWM_FREQ, PWM_RESOLUTION);
     ledcAttachPin(M_A1, M_A1_CH);
 
-    ledcSetup(M_A2_CH, freq, resolution);
+    ledcSetup(M_A2_CH, PWM_FREQ, PWM_RESOLUTION);
     ledcAttachPin(M_A2, M_A2_CH);
 
     // 电机 B
-    ledcSetup(M_B1_CH, freq, resolution);
+    ledcSetup(M_B1_CH, PWM_FREQ, PWM_RESOLUTION);
     ledcAttachPin(M_B1, M_B1_CH);
 
-    ledcSetup(M_B2_CH, freq, resolution);
+    ledcSetup(M_B2_CH, PWM_FREQ, PWM_RESOLUTION);
     ledcAttachPin(M_B2, M_B2_CH);
 
     motor_stop();
@@ -45,13 +46,13 @@ void motorA_set_pwm(float duty)
 
     if (duty >= 0)
     {
-        ledcWrite(M_A1_CH, duty * 255);
+        ledcWrite(M_A1_CH, duty * PWM_MAX_VALUE);
         ledcWrite(M_A2_CH, 0);
     }
     else
     {
         ledcWrite(M_A1_CH, 0);
-        ledcWrite(M_A2_CH, -duty * 255);
+        ledcWrite(M_A2_CH, -duty * PWM_MAX_VALUE);
     }
 }
 
@@ -65,12 +66,12 @@ void motorB_set_pwm(float duty)
     if (duty >= 0)
     {       
         ledcWrite(M_B1_CH, 0);
-        ledcWrite(M_B2_CH, duty * 255);
+        ledcWrite(M_B2_CH, duty * PWM_MAX_VALUE);
 
     }
     else
     {
-        ledcWrite(M_B1_CH, -duty * 255);
+        ledcWrite(M_B1_CH, -duty * PWM_MAX_VALUE);
         ledcWrite(M_B2_CH, 0);
     }
 }
