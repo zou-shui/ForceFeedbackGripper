@@ -54,4 +54,4 @@ private:
     float integral_max_; // 积分限幅值
 };
 
-} // namespace control
+} // namespace Control
