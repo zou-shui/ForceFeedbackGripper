@@ -63,7 +63,7 @@ void control_task(void *pvParameters)
   }
 }
 
-//测试夹爪同步运行
+//测试夹爪同步运行（使用vTaskDelay替代delay）
 void gripper_sync_run(float base_duty, int total_ms)
 {
     unsigned long start = millis();
@@ -82,10 +82,82 @@ void gripper_sync_run(float base_duty, int total_ms)
         motorA_set_pwm(dutyA);
         motorB_set_pwm(dutyB);
 
-        delay(1); //这里必须有个延时不然运行时要报错，服了  
+        vTaskDelay(pdMS_TO_TICKS(1)); // 使用RTOS延时
     }
 
     motor_stop();   // 结束时停下
+}
+
+// 串口命令处理任务
+void serial_command_task(void *pvParameters)
+{
+  while (1)
+  {
+    if (Serial.available())
+    {
+      String msg = Serial.readStringUntil('\n'); // 读一行
+      msg.trim();                                // 去掉换行和空格
+
+      if (msg.startsWith("P:"))
+      {
+        String num = msg.substring(2); // 取冒号后面的部分
+        float new_pos = num.toFloat();  // 转成 float
+
+        // 更新目标位置时使用互斥锁保护
+        if (xSemaphoreTake(xPositionMutex, portMAX_DELAY) == pdTRUE) {
+          Position_ref = new_pos;
+          xSemaphoreGive(xPositionMutex);
+        }
+
+        // Serial.print("接收到P值 = ");
+        // Serial.println(Position_ref, 3);
+      }
+      else if (msg == "A1")
+      {
+        motorA_set_pwm(MOTOR_PWM_DUTY);
+        vTaskDelay(pdMS_TO_TICKS(MOTOR_RUN_TIME));
+        motor_stop();
+        Serial.println("A1高电平执行完毕");
+      }
+      else if (msg == "A2")
+      {
+        motorA_set_pwm(-MOTOR_PWM_DUTY);
+        vTaskDelay(pdMS_TO_TICKS(MOTOR_RUN_TIME));
+        motor_stop();
+        Serial.println("A2高电平执行完毕");
+      }
+      else if (msg == "B1")
+      {
+        motorB_set_pwm(MOTOR_PWM_DUTY);
+        vTaskDelay(pdMS_TO_TICKS(MOTOR_RUN_TIME));
+        motor_stop();
+        Serial.println("B1高电平执行完毕");
+      }
+      else if (msg == "B2")
+      {
+        motorB_set_pwm(-MOTOR_PWM_DUTY);
+        vTaskDelay(pdMS_TO_TICKS(MOTOR_RUN_TIME));
+        motor_stop();
+        Serial.println("B2高电平执行完毕");
+      }
+      else if (msg == "M1")
+      {
+        gripper_sync_run(MOTOR_PWM_DUTY, MOTOR_RUN_TIME);
+        Serial.println("夹紧执行完毕");
+      }
+      else if (msg == "M2")
+      {
+        gripper_sync_run(-MOTOR_PWM_DUTY, MOTOR_RUN_TIME);
+        Serial.println("放松执行完毕");
+      }
+      else
+      {
+        Serial.println("未知命令");
+      }
+    }
+
+    vTaskDelay(pdMS_TO_TICKS(10)); // 防止任务占用过多CPU
+  }
 }
 
 
@@ -117,73 +189,19 @@ void setup()
       "ControlTask",
       4096,
       NULL,
-      1,
+      3,            // 提高控制任务优先级
+      NULL);
+  xTaskCreate(
+      serial_command_task,
+      "SerialTask",
+      4096,
+      NULL,
+      1,            // 串口任务优先级最低
       NULL);
 }
 
 void loop()
 {
-
-  if (Serial.available())
-  {
-    String msg = Serial.readStringUntil('\n'); // 读一行
-    msg.trim();                                // 去掉换行和空格
-
-    if (msg.startsWith("P:"))
-    {
-      String num = msg.substring(2); // 取冒号后面的部分
-      float new_pos = num.toFloat();  // 转成 float
-
-      // 更新目标位置时使用互斥锁保护
-      if (xSemaphoreTake(xPositionMutex, portMAX_DELAY) == pdTRUE) {
-        Position_ref = new_pos;
-        xSemaphoreGive(xPositionMutex);
-      }
-
-      // Serial.print("接收到P值 = ");
-      // Serial.println(Position_ref, 3);
-    }
-    else if (msg == "A1")
-    {
-      motorA_set_pwm(MOTOR_PWM_DUTY);
-      delay(MOTOR_RUN_TIME);
-      motor_stop();
-      Serial.println("A1高电平执行完毕");
-    }
-    else if (msg == "A2")
-    {
-      motorA_set_pwm(-MOTOR_PWM_DUTY);
-      delay(MOTOR_RUN_TIME);
-      motor_stop();
-      Serial.println("A2高电平执行完毕");
-    }
-    else if (msg == "B1")
-    {
-      motorB_set_pwm(MOTOR_PWM_DUTY);
-      delay(MOTOR_RUN_TIME);
-      motor_stop();
-      Serial.println("B1高电平执行完毕");
-    }
-    else if (msg == "B2")
-    {
-      motorB_set_pwm(-MOTOR_PWM_DUTY);
-      delay(MOTOR_RUN_TIME);
-      motor_stop();
-      Serial.println("B2高电平执行完毕");
-    }
-    else if (msg == "M1")
-    {
-      gripper_sync_run(MOTOR_PWM_DUTY, MOTOR_RUN_TIME);
-      Serial.println("夹紧执行完毕");
-    }
-    else if (msg == "M2")
-    {
-      gripper_sync_run(-MOTOR_PWM_DUTY, MOTOR_RUN_TIME);
-      Serial.println("放松执行完毕");
-    }
-    else
-    {
-      Serial.println("未知命令");
-    }
-  }
+  // loop函数留空，所有处理在RTOS任务中进行
+  vTaskDelay(portMAX_DELAY);
 }
