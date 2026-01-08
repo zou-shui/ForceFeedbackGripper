@@ -4,6 +4,7 @@
 
 #define MOTOR_PWM_DUTY 0.9f // 电机PWM占空比
 #define MOTOR_RUN_TIME 500  // 电机运行时间，单位ms
+#define SYNC_GAIN 0.01f     // 双电机同步控制增益
 
 float Position_ref = 0.0f;
 SemaphoreHandle_t xPositionMutex = NULL; // 互斥锁保护Position_ref 
@@ -51,7 +52,7 @@ void control_task(void *pvParameters)
 
     // 同步修正
     float diff = a - b;
-    float sync = -0.01f * diff;
+    float sync = -SYNC_GAIN * diff;
 
     float dutyA = constrain(base + sync, -1.0f, 1.0f);
     float dutyB = constrain(base - sync, -1.0f, 1.0f);
@@ -73,8 +74,8 @@ void gripper_sync_run(float base_duty, int total_ms)
     float a = angleA_read();
     float b = angleB_read();
 
-    float diff = a - b;
-    float sync = -0.01 * diff;
+        float diff = a - b;
+        float sync = -SYNC_GAIN * diff;
 
     float dutyA = constrain(base_duty + sync, -1.0f, 1.0f);
     float dutyB = constrain(base_duty - sync, -1.0f, 1.0f);
