@@ -5,19 +5,19 @@
 #define MOTOR_PWM_DUTY 0.9f // 电机PWM占空比
 #define MOTOR_RUN_TIME 500  // 电机运行时间，单位ms
 
-float Position_ref = 0.0f; 
+float Position_ref = 0.0f;
 
-//打印信息，测试用
+// 打印信息，测试用
 void print_task(void *pvParameters)
 {
-    while(1)
-    {
-        float cur = current_read();
-        Serial.print(cur, 4); 
-        Serial.print(",");
-        Serial.print(angleA_read(), 2);
-        Serial.print(",");
-        Serial.println(angleB_read(), 2);
+  while (1)
+  {
+    float cur = current_read();
+    Serial.print(cur, 4);
+    Serial.print(",");
+    Serial.print(angleA_read(), 2);
+    Serial.print(",");
+    Serial.println(angleB_read(), 2);
 
     delay(50);
   }
@@ -55,31 +55,30 @@ void control_task(void *pvParameters)
   }
 }
 
-//测试夹爪同步运行
+// 测试夹爪同步运行
 void gripper_sync_run(float base_duty, int total_ms)
 {
-    unsigned long start = millis();
+  unsigned long start = millis();
 
-    while (millis() - start < total_ms)
-    {
-        float a = angleA_read();
-        float b = angleB_read();
+  while (millis() - start < total_ms)
+  {
+    float a = angleA_read();
+    float b = angleB_read();
 
-        float diff = a - b;
-        float sync = -0.01 * diff;
+    float diff = a - b;
+    float sync = -0.01 * diff;
 
-        float dutyA = constrain(base_duty + sync, -1.0f, 1.0f);
-        float dutyB = constrain(base_duty - sync, -1.0f, 1.0f);
+    float dutyA = constrain(base_duty + sync, -1.0f, 1.0f);
+    float dutyB = constrain(base_duty - sync, -1.0f, 1.0f);
 
-        motorA_set_pwm(dutyA);
-        motorB_set_pwm(dutyB);
+    motorA_set_pwm(dutyA);
+    motorB_set_pwm(dutyB);
 
-        delay(1); //这里必须有个延时不然运行时要报错，服了  
-    }
+    delay(1); // 这里必须有个延时不然运行时要报错，服了
+  }
 
-    motor_stop();   // 结束时停下
+  motor_stop(); // 结束时停下
 }
-
 
 void setup()
 {
@@ -90,21 +89,23 @@ void setup()
   current_init();
   angle_init();
 
-  xTaskCreate(
+  xTaskCreatePinnedToCore(
       print_task,   // 任务函数
       "Print_task", // 名字
       4096,         // 栈大小
       NULL,         // 参数
       2,            // 优先级
-      NULL          // 任务句柄
+      NULL,         // 任务句柄
+      0             // 核心ID
   );
-  xTaskCreate(
+  xTaskCreatePinnedToCore(
       control_task,
       "ControlTask",
       4096,
       NULL,
       1,
-      NULL);
+      NULL,
+      0);
 }
 
 void loop()
