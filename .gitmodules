@@ -1,0 +1,3 @@
+[submodule "3.Software"]
+	path = 3.Software
+	url = https://github.com/RayAdas/ForceFeedbackGripperMonitor.git
