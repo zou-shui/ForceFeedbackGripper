@@ -1,4 +1,5 @@
-#pragma once
+#ifndef __HAL_H
+#define __HAL_H
 
 #include <Arduino.h>
 
@@ -20,3 +21,7 @@ float current_read(void);
 void angle_init(void);
 float angleA_read(void);
 float angleB_read(void);
+
+
+
+#endif
