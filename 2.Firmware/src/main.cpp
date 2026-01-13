@@ -1,23 +1,9 @@
 #include <Arduino.h>
 #include "HAL.h"
 #include "control.hpp"
-#include <Preferences.h>
+#include "PIDManager.hpp"
 
-Preferences prefs;
-
-// PID 参数结构体
-struct PIDParam
-{
-  float kp;
-  float ki;
-  float kd;
-};
-
-// 两个环的参数
-PIDParam posParam;
-PIDParam currParam;
-// 互斥锁（防止串口任务和控制任务同时改 PID）
-SemaphoreHandle_t xPIDMutex = NULL;
+PIDManager pidManager;
 
 #define MOTOR_PWM_DUTY 0.9f // 电机PWM占空比
 #define MOTOR_RUN_TIME 500  // 电机运行时间，单位ms
@@ -134,75 +120,16 @@ void serial_command_task(void *pvParameters)
         int idx = msg.indexOf(':');
         String key = msg.substring(0, idx);
         String val = msg.substring(idx + 1);
-
-        float value = val.toFloat();
-
-        if (xSemaphoreTake(xPIDMutex, portMAX_DELAY) == pdTRUE)
-        {
-          bool updated = true;
-
-          // ---- 位置环 ----
-          if (key == "posP")
-            posParam.kp = value;
-          else if (key == "posI")
-            posParam.ki = value;
-          else if (key == "posD")
-            posParam.kd = value;
-
-          // ---- 电流环 ----
-          else if (key == "currP")
-            currParam.kp = value;
-          else if (key == "currI")
-            currParam.ki = value;
-          else if (key == "currD")
-            currParam.kd = value;
-          else
-            updated = false;
-
-          if (updated)
-          {
-            // 立即更新 PID 对象（关键）
-            Control::posPID.setParam(
-                posParam.kp,
-                posParam.ki,
-                posParam.kd);
-
-            Control::currPID.setParam(
-                currParam.kp,
-                currParam.ki,
-                currParam.kd);
-
-            Serial.print("PID 已更新: ");
-            Serial.print(key);
-            Serial.print(" = ");
-            Serial.println(value, 4);
-          }
-
-          xSemaphoreGive(xPIDMutex);
-        }
+        pidManager.setParam(key, val.toFloat());
+        Serial.println("PID参数已更新");
       }
       else if (msg == "pid save")
       {
-        prefs.begin("pid", false);
-
-        prefs.putFloat("pos_kp", posParam.kp);
-        prefs.putFloat("pos_ki", posParam.ki);
-        prefs.putFloat("pos_kd", posParam.kd);
-
-        prefs.putFloat("curr_kp", currParam.kp);
-        prefs.putFloat("curr_ki", currParam.ki);
-        prefs.putFloat("curr_kd", currParam.kd);
-
-        prefs.end();
-
-        Serial.println("PID 参数已保存到 NVS");
+        pidManager.saveToNVS();
       }
       else if (msg == "pid show")
       {
-        Serial.printf("POS: kp=%.3f ki=%.3f kd=%.3f\n",
-                      posParam.kp, posParam.ki, posParam.kd);
-        Serial.printf("CUR: kp=%.3f ki=%.3f kd=%.3f\n",
-                      currParam.kp, currParam.ki, currParam.kd);
+        pidManager.show();
       }
 
       else if (msg == "A1")
@@ -253,43 +180,14 @@ void serial_command_task(void *pvParameters)
   }
 }
 
-void loadPIDFromNVS()
-{
-  prefs.begin("pid", true); // 只读
-
-  posParam.kp = prefs.getFloat("pos_kp", 0.5f);
-  posParam.ki = prefs.getFloat("pos_ki", 0.5f);
-  posParam.kd = prefs.getFloat("pos_kd", 0.01f);
-
-  currParam.kp = prefs.getFloat("curr_kp", 0.5f);
-  currParam.ki = prefs.getFloat("curr_ki", 0.05f);
-  currParam.kd = prefs.getFloat("curr_kd", 0.02f);
-
-  prefs.end();
-
-  Serial.println("PID 参数已从 NVS 读取");
-}
-
 void setup()
 {
   Serial.begin(115200);
   Serial.println("ESP32 串口双向通信已启动~");
 
   xPositionMutex = xSemaphoreCreateMutex();
-  xPIDMutex = xSemaphoreCreateMutex();
 
-  loadPIDFromNVS();
-
-  // 置 PID 参数
-  Control::posPID.setParam(posParam.kp, posParam.ki, posParam.kd);
-  Control::currPID.setParam(currParam.kp, currParam.ki, currParam.kd);
-
-  // 创建互斥锁
-  xPositionMutex = xSemaphoreCreateMutex();
-  if (xPositionMutex == NULL)
-  {
-    Serial.println("互斥锁创建失败！");
-  }
+  pidManager.begin();
 
   motor_init();
   current_init();
