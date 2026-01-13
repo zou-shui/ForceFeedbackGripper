@@ -4,14 +4,12 @@
 
 PIDManager pidManager;
 
-#define MOTOR_PWM_DUTY 0.9f // 电机PWM占空比
-#define MOTOR_RUN_TIME 500  // 电机运行时间，单位ms
-#define SYNC_GAIN 0.01f     // 双电机同步控制增益
+#define SYNC_GAIN 0.01f // 双电机同步控制增益
 
 float Position_ref = 0.0f;
 SemaphoreHandle_t xPositionMutex = NULL; // 互斥锁保护Position_ref
 
-// 打印信息，测试用
+// 打印信息
 void print_task(void *pvParameters)
 {
   while (1)
@@ -57,7 +55,7 @@ void control_task(void *pvParameters)
     float diff = a - b;
     float sync = -SYNC_GAIN * diff;
 
-    float dutyA = constrain(base + sync, -1.0f, 1.0f);  
+    float dutyA = constrain(base + sync, -1.0f, 1.0f);
     float dutyB = constrain(base - sync, -1.0f, 1.0f);
 
     motorA_set_pwm(dutyA);
@@ -65,31 +63,6 @@ void control_task(void *pvParameters)
 
     vTaskDelay(pdMS_TO_TICKS(10));
   }
-}
-
-// 测试夹爪同步运行（使用vTaskDelay替代delay）
-void gripper_sync_run(float base_duty, int total_ms)
-{
-  unsigned long start = millis();
-
-  while (millis() - start < total_ms)
-  {
-    float a = angleA_read();
-    float b = angleB_read();
-
-    float diff = a - b;
-    float sync = -SYNC_GAIN * diff;
-
-    float dutyA = constrain(base_duty + sync, -1.0f, 1.0f);
-    float dutyB = constrain(base_duty - sync, -1.0f, 1.0f);
-
-    motorA_set_pwm(dutyA);
-    motorB_set_pwm(dutyB);
-
-    vTaskDelay(pdMS_TO_TICKS(1)); // 使用RTOS延时
-  }
-
-  motor_stop(); // 结束时停下
 }
 
 // 串口命令处理任务
@@ -130,45 +103,6 @@ void serial_command_task(void *pvParameters)
       {
         pidManager.show();
       }
-
-      else if (msg == "A1")
-      {
-        motorA_set_pwm(MOTOR_PWM_DUTY);
-        vTaskDelay(pdMS_TO_TICKS(MOTOR_RUN_TIME));
-        motor_stop();
-        Serial.println("A1高电平执行完毕");
-      }
-      else if (msg == "A2")
-      {
-        motorA_set_pwm(-MOTOR_PWM_DUTY);
-        vTaskDelay(pdMS_TO_TICKS(MOTOR_RUN_TIME));
-        motor_stop();
-        Serial.println("A2高电平执行完毕");
-      }
-      else if (msg == "B1")
-      {
-        motorB_set_pwm(MOTOR_PWM_DUTY);
-        vTaskDelay(pdMS_TO_TICKS(MOTOR_RUN_TIME));
-        motor_stop();
-        Serial.println("B1高电平执行完毕");
-      }
-      else if (msg == "B2")
-      {
-        motorB_set_pwm(-MOTOR_PWM_DUTY);
-        vTaskDelay(pdMS_TO_TICKS(MOTOR_RUN_TIME));
-        motor_stop();
-        Serial.println("B2高电平执行完毕");
-      }
-      else if (msg == "M1")
-      {
-        gripper_sync_run(MOTOR_PWM_DUTY, MOTOR_RUN_TIME);
-        Serial.println("夹紧执行完毕");
-      }
-      else if (msg == "M2")
-      {
-        gripper_sync_run(-MOTOR_PWM_DUTY, MOTOR_RUN_TIME);
-        Serial.println("放松执行完毕");
-      }
       else
       {
         Serial.println("未知命令");
@@ -206,7 +140,7 @@ void setup()
       "ControlTask",
       4096,
       NULL,
-      3, // 提高控制任务优先级
+      3, // 控制任务优先级最高
       NULL,
       0);
   xTaskCreatePinnedToCore(
