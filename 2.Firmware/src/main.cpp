@@ -1,6 +1,5 @@
 #include <Arduino.h>
 #include "HAL.h"
-#include "control.hpp"
 #include "PIDManager.hpp"
 
 PIDManager pidManager;
@@ -48,7 +47,7 @@ void control_task(void *pvParameters)
       xSemaphoreGive(xPositionMutex);
     }
 
-    float base = Control::controlStep(
+    float base = Gripper::gripperStep(
         pos_fb,
         pos_ref_local,
         dt,
@@ -58,7 +57,7 @@ void control_task(void *pvParameters)
     float diff = a - b;
     float sync = -SYNC_GAIN * diff;
 
-    float dutyA = constrain(base + sync, -1.0f, 1.0f);
+    float dutyA = constrain(base + sync, -1.0f, 1.0f);  
     float dutyB = constrain(base - sync, -1.0f, 1.0f);
 
     motorA_set_pwm(dutyA);

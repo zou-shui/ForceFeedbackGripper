@@ -1,7 +1,7 @@
 #pragma once
 #include <Arduino.h>
 #include <Preferences.h>
-#include "control.hpp" // Control::posPID
+#include "PIDGripper.hpp"
 
 class PIDManager
 {
@@ -97,8 +97,8 @@ private:
 
     void applyToPIDObjects()
     {
-        // 将参数应用到 Control 模块的 PID 对象
-        Control::posPID.setParam(posParam.kp, posParam.ki, posParam.kd);
-        Control::currPID.setParam(currParam.kp, currParam.ki, currParam.kd);
+        // 将参数应用到 Gripper 模块的 PID 对象
+        Gripper::posPID.setParam(posParam.kp, posParam.ki, posParam.kd);
+        Gripper::currPID.setParam(currParam.kp, currParam.ki, currParam.kd);
     }
 };

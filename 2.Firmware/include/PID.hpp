@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Control
+namespace Gripper
 {
     class PID
     {
@@ -68,4 +68,4 @@ namespace Control
         float integral_max_; // 积分限幅值
     };
 
-} // namespace Control
+} // namespace Gripper
