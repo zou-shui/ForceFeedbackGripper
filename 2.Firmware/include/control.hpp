@@ -4,8 +4,8 @@
 
 namespace Control
 {
-    static PID posPID(0.1f, 0.05f, 0.001f, -100.0f, 100.0f);
-    static PID currPID(0.5f, 0.05f, 0.02f, -50.0f, 50.0f);
+    static PID posPID(0.1f, 0.05f, 0.001f, -1.0f, 1.0f);
+    static PID currPID(1.0f, 0.05f, 0.02f, -1.0f, 1.0f);
 
     float controlStep(float pos_fb, float pos_ref, float dt, float curr_fb)
     {

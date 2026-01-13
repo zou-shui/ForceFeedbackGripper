@@ -53,6 +53,13 @@ namespace Control
             integral_max_ = max_val;
         }
 
+        void setParam(float kp, float ki, float kd)
+        {
+            kp_ = kp;
+            ki_ = ki;
+            kd_ = kd;
+        }
+
     private:
         float kp_, ki_, kd_;
         float out_min_, out_max_;
