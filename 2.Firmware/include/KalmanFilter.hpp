@@ -3,13 +3,15 @@
 // Simple 1D Kalman filter (header-only)
 // State: x (estimate), covariance: P
 // Tunables: Q (process noise), R (measurement noise)
-class KalmanFilter1D {
+class KalmanFilter1D
+{
 public:
     KalmanFilter1D(float q = 1e-3f, float r = 1e-2f, float x0 = 0.0f, float p0 = 1.0f)
         : Q(q), R(r), x(x0), P(p0) {}
 
     // Update with measurement z and return filtered estimate
-    float update(float z) {
+    float update(float z)
+    {
         // Predict
         P += Q;
         // Innovation
@@ -21,7 +23,8 @@ public:
         return x;
     }
 
-    void reset(float x0, float p0 = 1.0f) {
+    void reset(float x0, float p0 = 1.0f)
+    {
         x = x0;
         P = p0;
     }

@@ -13,9 +13,9 @@
 #define M_B2_CH 3
 
 // PWM参数定义
-#define PWM_FREQ 20000      // PWM频率: 20kHz
-#define PWM_RESOLUTION 8    // PWM分辨率: 8位 (0~255)
-#define PWM_MAX_VALUE 255   // PWM最大值
+#define PWM_FREQ 20000    // PWM频率: 20kHz
+#define PWM_RESOLUTION 8  // PWM分辨率: 8位 (0~255)
+#define PWM_MAX_VALUE 255 // PWM最大值
 
 // 初始化电机控制 PWM
 void motor_init()
@@ -64,10 +64,9 @@ void motorB_set_pwm(float duty)
     duty = constrain(duty, -1.0f, 1.0f);
 
     if (duty >= 0)
-    {       
+    {
         ledcWrite(M_B1_CH, 0);
         ledcWrite(M_B2_CH, duty * PWM_MAX_VALUE);
-
     }
     else
     {

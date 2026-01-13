@@ -7,7 +7,7 @@
 #define SYNC_GAIN 0.01f     // 双电机同步控制增益
 
 float Position_ref = 0.0f;
-SemaphoreHandle_t xPositionMutex = NULL; // 互斥锁保护Position_ref 
+SemaphoreHandle_t xPositionMutex = NULL; // 互斥锁保护Position_ref
 
 // 打印信息，测试用
 void print_task(void *pvParameters)
@@ -39,7 +39,8 @@ void control_task(void *pvParameters)
 
     // 读取目标位置时使用互斥锁保护
     float pos_ref_local = 0.0f;
-    if (xSemaphoreTake(xPositionMutex, portMAX_DELAY) == pdTRUE) {
+    if (xSemaphoreTake(xPositionMutex, portMAX_DELAY) == pdTRUE)
+    {
       pos_ref_local = Position_ref;
       xSemaphoreGive(xPositionMutex);
     }
@@ -64,7 +65,7 @@ void control_task(void *pvParameters)
   }
 }
 
-//测试夹爪同步运行（使用vTaskDelay替代delay）
+// 测试夹爪同步运行（使用vTaskDelay替代delay）
 void gripper_sync_run(float base_duty, int total_ms)
 {
   unsigned long start = millis();
@@ -74,8 +75,8 @@ void gripper_sync_run(float base_duty, int total_ms)
     float a = angleA_read();
     float b = angleB_read();
 
-        float diff = a - b;
-        float sync = -SYNC_GAIN * diff;
+    float diff = a - b;
+    float sync = -SYNC_GAIN * diff;
 
     float dutyA = constrain(base_duty + sync, -1.0f, 1.0f);
     float dutyB = constrain(base_duty - sync, -1.0f, 1.0f);
@@ -83,8 +84,8 @@ void gripper_sync_run(float base_duty, int total_ms)
     motorA_set_pwm(dutyA);
     motorB_set_pwm(dutyB);
 
-        vTaskDelay(pdMS_TO_TICKS(1)); // 使用RTOS延时
-    }
+    vTaskDelay(pdMS_TO_TICKS(1)); // 使用RTOS延时
+  }
 
   motor_stop(); // 结束时停下
 }
@@ -102,10 +103,11 @@ void serial_command_task(void *pvParameters)
       if (msg.startsWith("P:"))
       {
         String num = msg.substring(2); // 取冒号后面的部分
-        float new_pos = num.toFloat();  // 转成 float
+        float new_pos = num.toFloat(); // 转成 float
 
         // 更新目标位置时使用互斥锁保护
-        if (xSemaphoreTake(xPositionMutex, portMAX_DELAY) == pdTRUE) {
+        if (xSemaphoreTake(xPositionMutex, portMAX_DELAY) == pdTRUE)
+        {
           Position_ref = new_pos;
           xSemaphoreGive(xPositionMutex);
         }
@@ -161,7 +163,6 @@ void serial_command_task(void *pvParameters)
   }
 }
 
-
 void setup()
 {
   Serial.begin(115200);
@@ -169,7 +170,8 @@ void setup()
 
   // 创建互斥锁
   xPositionMutex = xSemaphoreCreateMutex();
-  if (xPositionMutex == NULL) {
+  if (xPositionMutex == NULL)
+  {
     Serial.println("互斥锁创建失败！");
   }
 
@@ -191,7 +193,7 @@ void setup()
       "ControlTask",
       4096,
       NULL,
-      3,            // 提高控制任务优先级
+      3, // 提高控制任务优先级
       NULL,
       0);
   xTaskCreate(
@@ -199,7 +201,7 @@ void setup()
       "SerialTask",
       4096,
       NULL,
-      1,            // 串口任务优先级最低
+      1, // 串口任务优先级最低
       NULL);
 }
 
