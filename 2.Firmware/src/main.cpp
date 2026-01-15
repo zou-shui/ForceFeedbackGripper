@@ -21,13 +21,13 @@ void print_task(void *pvParameters)
     Serial.print(",");
     Serial.println(angleB_read(), 2);
 
-    delay(50);
+    vTaskDelay(pdMS_TO_TICKS(5));
   }
 }
 
 void control_task(void *pvParameters)
 {
-  const float dt = 0.01f; // 10ms
+  const float dt = 0.001f;
 
   while (1)
   {
@@ -61,7 +61,7 @@ void control_task(void *pvParameters)
     motorA_set_pwm(dutyA);
     motorB_set_pwm(dutyB);
 
-    vTaskDelay(pdMS_TO_TICKS(10));
+    vTaskDelay(pdMS_TO_TICKS(1));
   }
 }
 
@@ -133,7 +133,7 @@ void setup()
       NULL,         // 参数
       2,            // 优先级
       NULL,         // 任务句柄
-      0             // 核心ID
+      1             // 核心ID
   );
   xTaskCreatePinnedToCore(
       control_task,
@@ -142,7 +142,7 @@ void setup()
       NULL,
       3, // 控制任务优先级最高
       NULL,
-      0);
+      1);
   xTaskCreatePinnedToCore(
       serial_command_task,
       "SerialTask",
@@ -150,7 +150,7 @@ void setup()
       NULL,
       1, // 串口任务优先级最低
       NULL,
-      1);
+      0);
 }
 
 void loop()

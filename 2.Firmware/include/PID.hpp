@@ -9,7 +9,7 @@ namespace Gripper
             : kp_(kp), ki_(ki), kd_(kd),
               out_min_(out_min), out_max_(out_max),
               prev_err_(0.0f), integral_(0.0f),
-              integral_max_(100.0f) {} // 默认积分限幅
+              integral_max_(0.5f) {} // 默认积分限幅
 
         float update(float ref, float fb, float dt)
         {

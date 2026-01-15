@@ -6,7 +6,7 @@
 #define POT_VMAX 2.5f      // 电位器供电电压
 #define ANGLE_RANGE 360.0f // 角度行程
 
-#define ANGLE_OFFSET 224.0f // 角度偏移量
+#define ANGLE_OFFSET 234.0f // 角度偏移量
 /*
     角度偏移量ANGLE_OFFSET将夹爪开合至共线时的角度补偿为0°
     夹紧过程中两臂平行时的角度补偿为90°
